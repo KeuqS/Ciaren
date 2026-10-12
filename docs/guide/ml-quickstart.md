@@ -100,12 +100,12 @@ Open a flow and expand **Machine Learning** in the node palette:
 | **[Encode Categories](../transformations/encode-categories.md)** | Fit one-hot or ordinal encoding on the incoming frame. |
 | **[Select Features](../transformations/select-features.md)** | Keep columns by variance, correlation or top-K relevance. |
 | **[Reduce Dimensions](../transformations/reduce-dimensions.md)** | Fit PCA and replace selected numeric columns with components. |
-| **Classifier / Regressor Model** | Define an unfitted estimator for Cross-Validate. |
+| **[Classifier Model](../transformations/classifier-model.md) / [Regressor Model](../transformations/regressor-model.md)** | Define an unfitted estimator for Cross-Validate. |
 | **Train Classifier / Train Regressor** | Fit a final model artifact and log it to MLflow. |
 | **Predict** | Score rows with a trained model. |
 | **Evaluate** | Compute metrics from predictions. |
 | **Feature Importance** | Rank which features the model relied on. |
-| **Cross-Validate** | Estimate generalization from a Classifier / Regressor Model definition with k-fold, stratified, time-series, group, or other CV strategies. |
+| **[Cross-Validate](../transformations/cross-validate.md)** | Estimate generalization from a Classifier / Regressor Model definition with k-fold, stratified, time-series, group, or other CV strategies. |
 
 ::: tip Model definitions vs. trained models
 Use **Classifier Model** or **Regressor Model** before **Cross-Validate**. These

@@ -104,6 +104,10 @@ and row/feature/model-size limits are enforced before training starts.
 
 ## Model definition nodes
 
+See the [Classifier Model](./classifier-model.md) and
+[Regressor Model](./regressor-model.md) references for configuration and complete
+pandas/Polars exports.
+
 **Classifier Model** and **Regressor Model** configure an estimator without
 fitting it, logging it, registering it, or producing predictions. Their `model`
 output is a **model configuration reference**: it carries the algorithm, target,
@@ -155,6 +159,9 @@ Takes a train node's **model** output and returns `feature_name` / `importance` 
 supported.
 
 ## Cross-Validate
+
+See the [Cross-Validate reference](./cross-validate.md) for exact configuration
+keys, task-specific metrics and runnable pandas/Polars exports.
 
 Estimates how well a connected classifier or regressor **generalizes** by
 re-fitting and scoring it across resampling folds, rather than reporting a single

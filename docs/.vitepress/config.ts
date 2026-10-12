@@ -249,7 +249,7 @@ export default defineConfig({
       {
         text: 'Machine Learning',
         link: '/guide/ml-quickstart',
-        activeMatch: '/(guide/ml-quickstart|transformations/(machine-learning|train-test-split|scale-features|encode-categories|select-features|reduce-dimensions))',
+        activeMatch: '/(guide/ml-quickstart|transformations/(machine-learning|train-test-split|scale-features|encode-categories|select-features|reduce-dimensions|classifier-model|regressor-model|cross-validate))',
       },
       {
         text: 'Plugins',
@@ -425,6 +425,9 @@ export default defineConfig({
             { text: 'Encode Categories', link: '/transformations/encode-categories' },
             { text: 'Select Features', link: '/transformations/select-features' },
             { text: 'Reduce Dimensions', link: '/transformations/reduce-dimensions' },
+            { text: 'Classifier Model', link: '/transformations/classifier-model' },
+            { text: 'Regressor Model', link: '/transformations/regressor-model' },
+            { text: 'Cross-Validate', link: '/transformations/cross-validate' },
           ],
         },
       ],
