@@ -44,7 +44,7 @@ import pandas as pd
 
 df_1 = pd.DataFrame({'location': ['EU|Paris', 'US|Boston', 'EU', None]})
 _parts = df_1['location'].astype('string').str.split('|', expand=True)
-df_2 = df_1.assign(region=_parts[0], city=_parts[1])
+df_2 = df_1.assign(region=(_parts[0] if 0 in _parts.columns else pd.NA), city=(_parts[1] if 1 in _parts.columns else pd.NA))
 print(df_2)
 ```
 
