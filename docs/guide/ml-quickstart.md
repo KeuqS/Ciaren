@@ -102,9 +102,9 @@ Open a flow and expand **Machine Learning** in the node palette:
 | **[Reduce Dimensions](../transformations/reduce-dimensions.md)** | Fit PCA and replace selected numeric columns with components. |
 | **[Classifier Model](../transformations/classifier-model.md) / [Regressor Model](../transformations/regressor-model.md)** | Define an unfitted estimator for Cross-Validate. |
 | **Train Classifier / Train Regressor** | Fit a final model artifact and log it to MLflow. |
-| **Predict** | Score rows with a trained model. |
-| **Evaluate** | Compute metrics from predictions. |
-| **Feature Importance** | Rank which features the model relied on. |
+| **[Predict](../transformations/predict.md)** | Score rows with a trained model. |
+| **[Evaluate](../transformations/evaluate.md)** | Compute metrics from predictions. |
+| **[Feature Importance](../transformations/feature-importance.md)** | Rank which features the model relied on. |
 | **[Cross-Validate](../transformations/cross-validate.md)** | Estimate generalization from a Classifier / Regressor Model definition with k-fold, stratified, time-series, group, or other CV strategies. |
 
 ::: tip Model definitions vs. trained models
@@ -160,8 +160,9 @@ A model wire never carries the model itself. Train nodes persist the fitted
 estimator to **MLflow** and pass a small, typed **model reference** downstream —
 the MLflow run/model URI plus the task, model type, target, and feature columns.
 That keeps flows serializable and reproducible, and it means loading a model
-always goes through Ciaren's safety checks (URI allowlist, artifact-directory
-confinement, no pickles). **Predict** and **Feature Importance** read the
+uses URI validation and artifact-directory confinement for local files. These
+checks do not sandbox model code: MLflow and joblib models can execute Python
+during loading, so load only artifacts you trust. **Predict** and **Feature Importance** read the
 reference and load the artifact themselves; production flows can instead pin a
 registry alias URI like `models:/churn@production` directly in Predict's config.
 

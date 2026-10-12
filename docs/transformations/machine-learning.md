@@ -131,6 +131,9 @@ Use the nodes this way:
 
 ## Predict
 
+See the [Predict reference](./predict.md) for configuration, runtime behavior
+and complete pandas/Polars examples.
+
 Scores rows with a trained model, adding a prediction column.
 
 | Field | Notes |
@@ -139,10 +142,15 @@ Scores rows with a trained model, adding a prediction column.
 | Prediction column | Name of the new output column (default `prediction`). |
 | Probability columns | Optional, classifiers — one name per class. |
 
-The input columns are matched to the model's expected features (missing features
-error; extra columns are dropped).
+When fitted feature names or the Train reference identify expected features,
+missing columns fail and extra columns are excluded from scoring but preserved
+in the output. External models without feature names receive all input columns;
+select and order their features before Predict.
 
 ## Evaluate
+
+See the [Evaluate reference](./evaluate.md) for configuration, runtime behavior
+and complete pandas/Polars examples.
 
 Computes metrics from predictions and returns a long-format `metric` / `value`
 table.
@@ -153,6 +161,9 @@ table.
 - **Clustering:** silhouette, Davies-Bouldin.
 
 ## Feature Importance
+
+See the [Feature Importance reference](./feature-importance.md) for configuration, runtime behavior
+and complete pandas/Polars examples.
 
 Takes a train node's **model** output and returns `feature_name` / `importance` /
 `rank`. Works for tree-based and linear models; SVM (non-linear) and KNN are not
