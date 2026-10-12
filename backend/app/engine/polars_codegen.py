@@ -383,7 +383,7 @@ class PolarsCodeGenerator:
                 var = input_var(name_hint)
                 node_outputs[node_id] = {"out": var}
                 suffix = ".lazy()" if lazy else ""
-                lines.append(f"with open({path!r}) as _f:")
+                lines.append(f"with open({path!r}, encoding='utf-8') as _f:")
                 lines.append(f'    {var} = pl.DataFrame({{"text": _f.read().splitlines()}}){suffix}')
             elif node_type == STORAGE_INPUT_TYPE:
                 # Cloud storage isn't reproduced in the portable script: read the
@@ -404,7 +404,7 @@ class PolarsCodeGenerator:
                 if dialect_needs_decode(source_type, storage_dialect):
                     lines.extend(_decoded_csv_read_lines(var, path, source_type, storage_dialect, lazy))
                 elif source_type == "text":
-                    lines.append(f"with open({path!r}) as _f:")
+                    lines.append(f"with open({path!r}, encoding='utf-8') as _f:")
                     lines.append(f'    {var} = pl.DataFrame({{"text": _f.read().splitlines()}}){suffix}')
                 elif lazy and source_type in _INPUT_SCAN_BY_FORMAT:
                     sep = ', separator="\\t"' if source_type == "tsv" else ""
