@@ -34,8 +34,11 @@ Classification defaults are `accuracy`, `precision`, `recall` and `f1`.
 Precision, recall and F1 use weighted averaging and `zero_division=0`.
 Optional runtime metrics are `roc_auc` and `confusion_matrix`. Binary ROC-AUC
 uses the second of two probability columns for the positive class; align them
-with the classifier's class order. Missing probability configuration or an
-undefined ROC-AUC warns and omits that metric. Confusion-matrix entries become
+with the classifier's class order. Missing probability configuration or a
+`ValueError` during ROC-AUC computation warns and omits that metric. An
+undefined score, such as a binary target containing only one class, can instead
+remain `NaN` with a warning; check for a finite value before interpreting it.
+Confusion-matrix entries become
 rows such as `cm_true0_pred1`; indices are positions, not class labels.
 
 Regression defaults are `rmse`, `mae`, `r2` and `mape`; `residual_std` is also
