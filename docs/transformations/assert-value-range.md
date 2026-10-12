@@ -43,10 +43,23 @@ The per-node result in the run detail always includes `assertion_passed`,
 
 ## Generated Python code
 
+### pandas
+
 ```python
 _range_mask = (pd.to_numeric(df_1['price'], errors='coerce') >= 0)
 if not _range_mask.all():
     raise ValueError(f"assertValueRange: {(~_range_mask).sum()} row(s) in 'price' outside range")
+```
+
+### Polars
+
+```python
+df_1 = df_1
+_range_violations = df_1.filter(
+    ~pl.col('price').cast(pl.Float64, strict=False).is_between(0, None, closed='both').fill_null(False)
+).height
+if _range_violations > 0:
+    raise ValueError(f"assertValueRange: {_range_violations} row(s) in 'price' outside range")
 ```
 
 In `warn` mode the `raise` is replaced by `warnings.warn(...)` and execution
