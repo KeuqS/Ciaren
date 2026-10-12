@@ -561,8 +561,18 @@ def test_train_export_preprocessing_matches_runtime(definition_input, ml_env, en
         engine, {"in": engine.from_pandas(frame)}, config
     )
     output_path = path.with_name("predictions.csv")
+    graph = _train_prediction_graph(config, output_path, {"output_column": "prediction"})
+    _execute_definition_export(graph, path, engine_name, lazy)
+    actual = pd.read_csv(output_path)
+    assert metadata is not None
+    assert r2_score(frame["target"], actual["prediction"]) == pytest.approx(metadata.ml_metrics["train_r2"])
+    pd.testing.assert_frame_equal(actual.drop(columns=["prediction"]), frame, check_dtype=False)
+    assert path.read_bytes() == original
+
+
+def _train_prediction_graph(config, output_path, prediction_config):
     graph = _definition_graph("mlTrainRegressor", config, data_path=output_path.as_posix())
-    graph["nodes"].append({"id": "predict", "type": "mlPredict", "data": {"config": {"output_column": "prediction"}}})
+    graph["nodes"].append({"id": "predict", "type": "mlPredict", "data": {"config": prediction_config}})
     graph["edges"] = [
         graph["edges"][0],
         {"id": "input-predict", "source": "input", "target": "predict", "targetHandle": "in"},
@@ -575,9 +585,47 @@ def test_train_export_preprocessing_matches_runtime(definition_input, ml_env, en
         },
         {"id": "predict-output", "source": "predict", "target": "output"},
     ]
-    _execute_definition_export(graph, path, engine_name, lazy)
+    return graph
+
+
+@pytest.mark.parametrize("engine_name,lazy", [("pandas", False), ("polars", False), ("polars", True)])
+@pytest.mark.parametrize(
+    "batch_size,parameterized",
+    [(None, False), (1, False), (7, False), (24, False), (30, False), (7, True), (None, True)],
+)
+def test_predict_export_honors_batch_size(definition_input, monkeypatch, engine_name, lazy, batch_size, parameterized):
+    from sklearn.pipeline import Pipeline
+
+    frame, path = definition_input
+    original = path.read_bytes()
+    output_path = path.with_name("batched.csv")
+    graph = _train_prediction_graph(
+        {"model_type": "ridge", "target_column": "target", "seed": 42},
+        output_path,
+        {"output_column": "prediction", "batch_size": "{{ batch }}" if parameterized else batch_size},
+    )
+    parameter_lines = None
+    if parameterized:
+        graph["parameters"] = [{"name": "batch", "type": "integer", "default": 2}]
+        parameter_lines = [f"batch = {batch_size!r}"]
+    predict = Pipeline.predict
+    calls = []
+
+    def capture_predictions(self, x, **kwargs):
+        calls.append((len(x), list(x.columns), x.index.tolist()))
+        return predict(self, x, **kwargs)
+
+    monkeypatch.setattr(Pipeline, "predict", capture_predictions)
+    namespace = _execute_definition_export(graph, path, engine_name, lazy, parameter_lines)
+    chunks = (
+        [list(range(i, min(i + batch_size, len(frame)))) for i in range(0, len(frame), batch_size)]
+        if batch_size
+        else [list(range(len(frame)))]
+    )
+    assert calls == [(len(chunk), ["x1", "x2"], chunk) for chunk in chunks]
+    models = [value for value in namespace.values() if isinstance(value, Pipeline)]
+    assert len(models) == 1
     actual = pd.read_csv(output_path)
-    assert metadata is not None
-    assert r2_score(frame["target"], actual["prediction"]) == pytest.approx(metadata.ml_metrics["train_r2"])
+    np.testing.assert_allclose(actual["prediction"], predict(models[0], frame[["x1", "x2"]]), rtol=1e-9, atol=1e-9)
     pd.testing.assert_frame_equal(actual.drop(columns=["prediction"]), frame, check_dtype=False)
     assert path.read_bytes() == original
