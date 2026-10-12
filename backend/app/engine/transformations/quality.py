@@ -198,15 +198,20 @@ class AssertUniqueTransformation(_BaseAssertion):
         src, dst = input_vars["in"], output_vars["out"]
         cols = config.get("columns") or None
         mode = config.get("mode", "error")
-        subset_expr = f"subset={cols!r}, " if cols else ""
+        frame_expr = dst
+        if cols:
+            if isinstance(cols, str):
+                cols = [cols]
+            # Column names can look like Polars selectors; retrieve them literally.
+            key_exprs = ", ".join(f"{dst}.get_column({column!r})" for column in dict.fromkeys(cols))
+            frame_expr = f"{dst}.select([{key_exprs}])"
         msg = 'f"assertUnique: {_dup_count} duplicate row(s)"'
         action = self._violation_action(mode, msg)
-        return (
-            f"{dst} = {src}\n"
-            f"_dup_count = len({dst}) - len({dst}.unique({subset_expr}maintain_order=True))\n"
-            f"if _dup_count > 0:\n"
-            f"    {action}"
-        )
+        # Match pandas missing-key semantics only in the temporary key projection.
+        count_expr = f"{frame_expr}.fill_nan(None).is_duplicated().sum()"
+        if not cols:
+            count_expr = f"({count_expr} if {dst}.width else 0)"
+        return f"{dst} = {src}\n_dup_count = {count_expr}\nif _dup_count > 0:\n    {action}"
 
 
 # ---------------------------------------------------------------------------

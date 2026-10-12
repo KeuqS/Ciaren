@@ -23,8 +23,10 @@ def engine(request):
     return get_engine(request.param)
 
 
-def _native(engine, pdf: pd.DataFrame):
-    return pl.from_pandas(pdf) if engine.name == "polars" else pdf
+def _native(engine, pdf: pd.DataFrame | pl.DataFrame):
+    if engine.name == "polars":
+        return pdf if isinstance(pdf, pl.DataFrame) else pl.from_pandas(pdf)
+    return pdf.to_pandas() if isinstance(pdf, pl.DataFrame) else pdf
 
 
 def run_assertion(engine, node_type, pdf, config):
@@ -605,7 +607,6 @@ def _exec_polars_codegen(code: str, df_in: pl.DataFrame) -> pl.DataFrame:
     "node_type,pdf,config",
     [
         ("assertNotNull", pd.DataFrame({"a": [1, 2]}), {"columns": ["a"]}),
-        ("assertUnique", pd.DataFrame({"id": [1, 2]}), {"columns": ["id"]}),
         ("assertValueRange", pd.DataFrame({"x": [5, 10]}), {"column": "x", "min": 0, "max": 100}),
         ("assertExpression", pd.DataFrame({"a": [1, 2]}), {"expression": "a > 0"}),
         ("assertRowCount", pd.DataFrame({"a": range(5)}), {"min_rows": 1, "max_rows": 10}),
@@ -622,7 +623,6 @@ def test_pandas_codegen_pass(node_type, pdf, config):
     "node_type,pdf,config",
     [
         ("assertNotNull", pd.DataFrame({"a": [1, None]}), {"columns": ["a"], "mode": "warn"}),
-        ("assertUnique", pd.DataFrame({"id": [1, 1]}), {"columns": ["id"], "mode": "warn"}),
         ("assertValueRange", pd.DataFrame({"x": [-1, 5]}), {"column": "x", "min": 0, "mode": "warn"}),
         ("assertExpression", pd.DataFrame({"a": [-1, 2]}), {"expression": "a > 0", "mode": "warn"}),
         ("assertRowCount", pd.DataFrame({"a": [1]}), {"min_rows": 5, "mode": "warn"}),
@@ -640,7 +640,6 @@ def test_pandas_codegen_warn_does_not_raise(node_type, pdf, config):
     "node_type,pdf,config",
     [
         ("assertNotNull", pd.DataFrame({"a": [1, None]}), {"columns": ["a"]}),
-        ("assertUnique", pd.DataFrame({"id": [1, 1]}), {"columns": ["id"]}),
         ("assertValueRange", pd.DataFrame({"x": [-1, 5]}), {"column": "x", "min": 0}),
         ("assertExpression", pd.DataFrame({"a": [-1, 2]}), {"expression": "a > 0"}),
         ("assertRowCount", pd.DataFrame({"a": [1]}), {"min_rows": 5}),
@@ -662,7 +661,6 @@ def test_pandas_codegen_error_raises(node_type, pdf, config):
     "node_type,pdf,config",
     [
         ("assertNotNull", pd.DataFrame({"a": [1, 2, 3]}), {"columns": ["a"]}),
-        ("assertUnique", pd.DataFrame({"id": [1, 2, 3]}), {"columns": ["id"]}),
         ("assertValueRange", pd.DataFrame({"x": [5, 10, 15]}), {"column": "x", "min": 0, "max": 100}),
         ("assertExpression", pd.DataFrame({"a": [1, 2, 3]}), {"expression": "a > 0"}),
         ("assertRowCount", pd.DataFrame({"a": range(5)}), {"min_rows": 1, "max_rows": 10}),
@@ -681,7 +679,6 @@ def test_polars_codegen_pass(node_type, pdf, config):
     "node_type,pdf,config",
     [
         ("assertNotNull", pd.DataFrame({"a": [1, None]}), {"columns": ["a"], "mode": "warn"}),
-        ("assertUnique", pd.DataFrame({"id": [1, 1]}), {"columns": ["id"], "mode": "warn"}),
         ("assertValueRange", pd.DataFrame({"x": [-1, 5]}), {"column": "x", "min": 0, "mode": "warn"}),
         ("assertExpression", pd.DataFrame({"a": [-1, 2]}), {"expression": "a > 0", "mode": "warn"}),
         ("assertRowCount", pd.DataFrame({"a": [1]}), {"min_rows": 5, "mode": "warn"}),
@@ -700,7 +697,6 @@ def test_polars_codegen_warn_does_not_raise(node_type, pdf, config):
     "node_type,pdf,config",
     [
         ("assertNotNull", pd.DataFrame({"a": [1, None]}), {"columns": ["a"]}),
-        ("assertUnique", pd.DataFrame({"id": [1, 1]}), {"columns": ["id"]}),
         ("assertValueRange", pd.DataFrame({"x": [-1, 5]}), {"column": "x", "min": 0}),
         ("assertExpression", pd.DataFrame({"a": [-1, 2]}), {"expression": "a > 0"}),
         ("assertRowCount", pd.DataFrame({"a": [1]}), {"min_rows": 5}),
@@ -712,6 +708,135 @@ def test_polars_codegen_error_raises(node_type, pdf, config):
     df_in = pl.from_pandas(pdf)
     with pytest.raises((ValueError, Exception)):
         _exec_polars_codegen(code, df_in)
+
+
+@pytest.mark.parametrize("mode", ["error", "warn"])
+@pytest.mark.parametrize(
+    "pdf,columns,expected_count",
+    [
+        pytest.param(
+            pd.DataFrame({"id": [7, 7, 7, 8], "payload": ["a", "b", "c", "d"]}),
+            ["id"],
+            3,
+            id="all-key-members",
+        ),
+        pytest.param(
+            pd.DataFrame({"id": [7, 7, 7, 8], "version": [1, 1, 2, 1]}),
+            ["id", "version"],
+            2,
+            id="composite-key",
+        ),
+        pytest.param(
+            pd.DataFrame({"id": [7, 7, 7, 8], "payload": ["a", "a", "b", "c"]}),
+            None,
+            2,
+            id="all-columns",
+        ),
+        pytest.param(
+            pd.DataFrame({"id": [7, 7, 7, 8], "payload": ["a", "a", "b", "c"]}),
+            [],
+            2,
+            id="empty-columns-default",
+        ),
+        pytest.param(
+            pd.DataFrame({"id": [None, None, 7], "payload": ["a", "b", "c"]}),
+            ["id"],
+            2,
+            id="null-key",
+        ),
+        pytest.param(
+            pd.DataFrame({"id": [7, 7, 7, 8, 8, 9]}),
+            ["id"],
+            5,
+            id="multiple-duplicate-groups",
+        ),
+        pytest.param(
+            pd.DataFrame({"id": [7, 7, 7, 8], "payload": ["a", "b", "c", "d"]}),
+            ["id", "id"],
+            3,
+            id="repeated-key-column",
+        ),
+        pytest.param(
+            pd.DataFrame({"id": [7, 7, 7, 8], "payload": ["a", "b", "c", "d"]}),
+            "id",
+            3,
+            id="existing-scalar-key",
+        ),
+        pytest.param(
+            pl.DataFrame({"id": [None, float("nan"), 7.0], "payload": ["a", "b", "c"]}),
+            ["id"],
+            2,
+            id="native-nan-null-key",
+        ),
+        pytest.param(
+            pl.DataFrame({"id": [None, float("nan"), None, 7.0], "version": [1, 1, 2, 1]}),
+            ["id", "version"],
+            2,
+            id="native-nan-null-composite-key",
+        ),
+        pytest.param(
+            pl.DataFrame({"id": [None, float("nan"), 7.0], "payload": [1, 1, 2]}),
+            None,
+            2,
+            id="native-nan-null-whole-row",
+        ),
+        pytest.param(pd.DataFrame({"*": [7, 7, 8], "payload": ["a", "b", "c"]}), ["*"], 2, id="literal-star-key"),
+        pytest.param(pd.DataFrame({"^id$": [7, 7, 8], "id": [1, 2, 3]}), ["^id$"], 2, id="literal-regex-key"),
+        pytest.param(pd.DataFrame({"id": [7, 8]}), ["id"], 0, id="unique-key"),
+        pytest.param(
+            pd.DataFrame({"id": [7, 7, 8], "version": [1, 2, 1]}),
+            ["id", "version"],
+            0,
+            id="unique-composite-key",
+        ),
+        pytest.param(pd.DataFrame({"id": pd.Series([], dtype="int64")}), ["id"], 0, id="empty"),
+        pytest.param(pl.DataFrame(), None, 0, id="empty-without-schema"),
+    ],
+)
+def test_unique_export_counts_all_duplicate_rows(engine, pdf, columns, expected_count, mode):
+    config = {"mode": mode}
+    if columns is not None:
+        config["columns"] = columns
+    expected_pdf = (pdf.to_pandas() if isinstance(pdf, pl.DataFrame) else pdf).copy(deep=True)
+    runtime_out, metadata = run_assertion(engine, "assertUnique", pdf, {**config, "mode": "warn"})
+    assert metadata.assertion_violation_count == expected_count
+    pd.testing.assert_frame_equal(runtime_out, expected_pdf)
+
+    node = get_transformation("assertUnique")
+    frame = _native(engine, pdf)
+    original = frame.clone() if engine.name == "polars" else frame.copy(deep=True)
+    if engine.name == "polars":
+        code = node.to_polars_code({"in": "df_1"}, {"out": "df_2"}, config)
+        execute_export = _exec_polars_codegen
+    else:
+        code = node.to_python_code({"in": "df_1"}, {"out": "df_2"}, config)
+        execute_export = _exec_codegen
+
+    message = f"assertUnique: {expected_count} duplicate row(s)"
+    if expected_count and mode == "error":
+        with pytest.raises(ValueError, match=rf"^assertUnique: {expected_count} duplicate row\(s\)$"):
+            execute_export(code, frame)
+    else:
+        with warnings.catch_warnings(record=True) as captured:
+            warnings.simplefilter("always")
+            output = execute_export(code, frame)
+        assert [str(warning.message) for warning in captured] == ([message] if expected_count else [])
+        pd.testing.assert_frame_equal(engine.to_pandas(output), expected_pdf)
+        if engine.name == "polars":
+            assert output.equals(original)
+    pd.testing.assert_frame_equal(engine.to_pandas(frame), expected_pdf)
+    if engine.name == "polars":
+        assert frame.equals(original)
+
+
+def test_polars_unique_export_rejects_missing_key_on_empty_input():
+    node = get_transformation("assertUnique")
+    config = {"columns": ["ghost"], "mode": "warn"}
+    node.validate_config(config)
+    code = node.to_polars_code({"in": "df_1"}, {"out": "df_2"}, config)
+    frame = pl.DataFrame(schema={"id": pl.Int64})
+    with pytest.raises(pl.exceptions.ColumnNotFoundError, match="ghost"):
+        _exec_polars_codegen(code, frame)
 
 
 def test_polars_codegen_not_null_all_columns(tmp_path):
