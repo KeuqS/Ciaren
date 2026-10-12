@@ -25,13 +25,17 @@ Read `README.md` and `CONTRIBUTING.md` for product and contributor context.
 
 Run commands from the indicated directory. Use focused checks for each change;
 the full backend suite is for a release, merge or explicit request.
+For that full gate, use `uv run python tools/run_tests.py` in `backend/`.
+It records the complete pytest inventory, executes one module per process and
+enforces combined 87% coverage. Use a fresh output directory; never hand-pick
+modules to represent a full run.
 
 | Directory | Command | Purpose |
 | --- | --- | --- |
 | `backend/` | `uv sync --all-groups --extra ml` | CI test dependencies |
 | `backend/` | `uv run --no-sync pytest tests/<affected-file>.py` | Focused tests |
-| `backend/` | `uv run --no-sync ruff check app tests` | Lint |
-| `backend/` | `uv run --no-sync ruff format --check app tests` | Formatting |
+| `backend/` | `uv run --no-sync ruff check app tests tools` | Lint |
+| `backend/` | `uv run --no-sync ruff format --check app tests tools` | Formatting |
 | `backend/` | `uv run --no-sync mypy app` | Types |
 | `frontend/` | `npm ci` | Install locked dependencies |
 | `frontend/` | `npm test -- <affected-test>` | Focused Vitest checks |
