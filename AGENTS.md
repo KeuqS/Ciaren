@@ -9,7 +9,7 @@ Read `README.md` and `CONTRIBUTING.md` for product and contributor context.
 - Python 3.12+, FastAPI, SQLAlchemy and SQLite by default; dependencies use `uv`.
   Optional database configuration uses `CIAREN_DATABASE_URL` and `CIAREN_*`
   environment variables. See `backend/.env.example`.
-- React 19, TypeScript, Vite and React Flow in `frontend/`; use Node.js 22 and
+- React 19, TypeScript, Vite and React Flow in `frontend/`; use Node.js 22.13+ and
   `npm ci`, matching CI. This application is not Next.js.
 - `backend/app/main.py`: API; `backend/app/cli.py`: CLI;
   `backend/app/engine/`: execution and code generation;
