@@ -7,8 +7,8 @@ layout: doc
 
 # Machine Learning Quick Start
 
-Ciaren has nodes for the full tabular ML lifecycle built in — clean → engineer
-features → split → train → evaluate → predict — on the same drag-and-drop
+Ciaren has nodes for the tabular ML lifecycle built in — clean → split → train
+with preprocessing → predict → evaluate — on the same drag-and-drop
 canvas. Models are tracked with [MLflow](https://mlflow.org).
 
 This guide builds a churn classifier in about 10 minutes.
@@ -74,8 +74,7 @@ experiment) rather than sharing your team's tracking server.
   :nodes='[
     {"type":"input","label":"File Input","detail":"churn dataset"},
     {"type":"ml","label":"Train / Test Split","detail":"seed + stratify"},
-    {"type":"ml","label":"Scale Features","detail":"normalize numeric cols"},
-    {"type":"ml","label":"Train Classifier","detail":"Random Forest → MLflow"},
+    {"type":"ml","label":"Train Classifier","detail":"preprocessing + Random Forest → MLflow"},
     {"type":"ml","label":"Predict","detail":"test output + model wire"},
     {"type":"ml","label":"Evaluate","detail":"accuracy, AUC, F1"},
     {"type":"output","label":"File Output","detail":"save metrics"}
@@ -84,9 +83,10 @@ experiment) rather than sharing your team's tracking server.
 
 :::tip Purple model wire
 **Train/Test Split** has two output handles: `train` and `test`. The train handle
-feeds **Scale Features** and then **Train Classifier**. The test handle feeds the data
-input of **Predict** directly. **Train Classifier** has a second output — the **model**
-handle — which connects via a purple wire to **Predict**'s model input.
+feeds **Train Classifier** directly. Its bundled preprocessing fits on the training
+rows and travels with the model. The test handle feeds the data
+input of **Predict** directly. **Train Classifier**'s **model** output connects via
+a purple wire to **Predict**'s model input.
 :::
 
 ## The nodes
@@ -95,11 +95,11 @@ Open a flow and expand **Machine Learning** in the node palette:
 
 | Node | What it does |
 | --- | --- |
-| **Train / Test Split** | Splits rows into `train` and `test` outputs (seed required). |
-| **Scale Features** | Standardize / normalize numeric columns. |
-| **Encode Categories** | One-hot or ordinal encoding for text columns. |
-| **Select Features** | Keep the most useful columns (variance / correlation / top-K). |
-| **Reduce Dimensions** | Compress numeric columns with PCA. |
+| **[Train / Test Split](../transformations/train-test-split.md)** | Splits rows into `train` and `test` outputs (seed required). |
+| **[Scale Features](../transformations/scale-features.md)** | Fit scaling on the incoming frame for exploration. |
+| **[Encode Categories](../transformations/encode-categories.md)** | Fit one-hot or ordinal encoding on the incoming frame. |
+| **[Select Features](../transformations/select-features.md)** | Keep columns by variance, correlation or top-K relevance. |
+| **[Reduce Dimensions](../transformations/reduce-dimensions.md)** | Fit PCA and replace selected numeric columns with components. |
 | **Classifier / Regressor Model** | Define an unfitted estimator for Cross-Validate. |
 | **Train Classifier / Train Regressor** | Fit a final model artifact and log it to MLflow. |
 | **Predict** | Score rows with a trained model. |
@@ -119,6 +119,16 @@ Cross-Validate, because that would train one full-data model and then train fold
 models again.
 :::
 
+::: tip Keep preprocessing with the trained model
+Scale Features and Encode Categories are useful for exploration, but refit on
+each input. Independently fitting them on train and test branches changes the
+feature representation. For this training flow, configure scaling, imputation
+and categorical encoding in Train Classifier's **Advanced → Preprocessing**.
+Predict then applies those fitted steps to the raw test rows. Standalone feature
+selection and PCA are not added to the model automatically; retain fitted steps
+in your own exported pipeline when you need them.
+:::
+
 ## Build the flow
 
 1. **Input** — drag a **File Input**, set File type to CSV, and pick your dataset
@@ -127,8 +137,9 @@ models again.
    reproducibility) and, for classification, stratify on your target.
 3. **Train Classifier** — connect the split's **train** output.
    - Pick a **Model** (grouped by task). Random Forest is a solid default.
-   - Choose the **Target column** (`churn`). Leave **Feature columns** empty to
-     use every other column.
+   - Choose the **Target column** (`churn`). Empty **Feature columns** uses every
+     other column. For the [customer sample](/samples/ml-classification/customers.csv),
+     choose `tenure`, `monthly_charges` and `support_calls`, leaving out the ID.
    - Tweak basic hyperparameters inline, or open **Advanced options** for the
      full set, tracking, and preprocessing.
 4. **Predict** — connect the split's **test** output to its data input, and the
@@ -152,7 +163,7 @@ That keeps flows serializable and reproducible, and it means loading a model
 always goes through Ciaren's safety checks (URI allowlist, artifact-directory
 confinement, no pickles). **Predict** and **Feature Importance** read the
 reference and load the artifact themselves; production flows can instead pin a
-registry URI like `models:/churn/Production` directly in Predict's config.
+registry alias URI like `models:/churn@production` directly in Predict's config.
 
 ### Models from plugins
 

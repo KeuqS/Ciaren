@@ -11,7 +11,7 @@ These nodes appear under **Machine Learning** in the palette by default — a
 plain `pip install ciaren` already includes scikit-learn and MLflow. See the
 [ML Quick Start](../guide/ml-quickstart.md) for an end-to-end walkthrough.
 
-All ML nodes run on scikit-learn (with optional XGBoost / LightGBM via
+Implemented ML nodes use pandas/scikit-learn (with optional XGBoost / LightGBM via
 `pip install "ciaren[ml]"`) and convert to pandas at the model boundary, so
 they work whether the flow's engine is polars or pandas.
 
@@ -19,8 +19,7 @@ they work whether the flow's engine is polars or pandas.
   :nodes='[
     {"type":"input","label":"File Input","detail":"dataset with target"},
     {"type":"ml","label":"Train / Test Split","detail":"seed + stratify"},
-    {"type":"ml","label":"Scale Features","detail":"normalize numerics"},
-    {"type":"ml","label":"Train Classifier","detail":"model → MLflow"},
+    {"type":"ml","label":"Train Classifier","detail":"preprocessing + model → MLflow"},
     {"type":"ml","label":"Predict","detail":"test data + model wire"},
     {"type":"ml","label":"Evaluate","detail":"accuracy · AUC · F1"},
     {"type":"output","label":"File Output","detail":"metrics table"}
@@ -46,25 +45,25 @@ they work whether the flow's engine is polars or pandas.
 Splits incoming rows into a training set and a test set. **Two outputs:** `train`
 and `test` — wire each to the right place.
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| Test size | number (0–1) | Fraction held out for testing. |
-| Stratify by | column | Optional. Preserves class balance across splits. |
-| Random seed | integer | **Required** — the same seed reproduces the split. |
+See the [Train/Test Split reference](./train-test-split.md) for configuration,
+minimum row counts, stratification and complete pandas/Polars exports.
 
 ## Feature engineering
 
-These transform features for exploration/preview. For training, prefer the
-**Preprocessing** section inside a train node's Advanced options — it bundles the
-same steps into the model so they're reapplied identically at predict time.
+These dataframe nodes fit on each incoming frame for exploration/preview. They
+do not pass a fitted transformer to another branch. For training, use the
+**Preprocessing** section inside a train node's Advanced options for scaling,
+imputation and one-hot encoding — those fitted steps travel with the model and
+are reapplied at predict time. Standalone feature selection and PCA do not become
+part of that model automatically.
 
-- **Scale Features** — `standard` (z-score), `minmax` (0–1), or `robust`
+- **[Scale Features](./scale-features.md)** — `standard` (z-score), `minmax` (0–1), or `robust`
   (median/IQR) over chosen numeric columns.
-- **Encode Categories** — `onehot` (dummy columns, optional drop-first) or
+- **[Encode Categories](./encode-categories.md)** — `onehot` (dummy columns, optional drop-first) or
   `ordinal` (integer codes).
-- **Select Features** — `variance` threshold, `correlation` filter, or `kbest`
+- **[Select Features](./select-features.md)** — `variance` threshold, `correlation` filter, or `kbest`
   (top-K by relevance to a target).
-- **Reduce Dimensions** — PCA; keep a number of components or a variance
+- **[Reduce Dimensions](./reduce-dimensions.md)** — PCA; keep a number of components or a variance
   fraction. Chosen columns are replaced by `pc_1`, `pc_2`, ….
 
 To fill missing values, use the standard **[Fill Nulls](./fill-nulls.md)**
@@ -77,7 +76,7 @@ imputes inside the model pipeline so the same fill is applied at predict time.
 Training is split into one node per task, so each model picker only shows
 relevant algorithms: **Train Classifier**, **Train Regressor**, **Train
 Clustering**, **Train Dim. Reduction**, and **Train Forecaster** (time-series —
-defined as a scaffold; models coming soon). They all fit a model and log it to
+defined as a scaffold; models coming soon). Implemented train nodes fit a model and log it to
 MLflow, and each emits a single `model` output (the purple wire) — wire it into
 **Predict** or **Feature Importance**.
 

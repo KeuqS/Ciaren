@@ -249,7 +249,7 @@ export default defineConfig({
       {
         text: 'Machine Learning',
         link: '/guide/ml-quickstart',
-        activeMatch: '/(guide/ml-quickstart|transformations/machine-learning)',
+        activeMatch: '/(guide/ml-quickstart|transformations/(machine-learning|train-test-split|scale-features|encode-categories|select-features|reduce-dimensions))',
       },
       {
         text: 'Plugins',
@@ -420,6 +420,11 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'ML nodes', link: '/transformations/machine-learning' },
+            { text: 'Train / Test Split', link: '/transformations/train-test-split' },
+            { text: 'Scale Features', link: '/transformations/scale-features' },
+            { text: 'Encode Categories', link: '/transformations/encode-categories' },
+            { text: 'Select Features', link: '/transformations/select-features' },
+            { text: 'Reduce Dimensions', link: '/transformations/reduce-dimensions' },
           ],
         },
       ],
