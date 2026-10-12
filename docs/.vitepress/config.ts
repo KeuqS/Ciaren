@@ -249,7 +249,7 @@ export default defineConfig({
       {
         text: 'Machine Learning',
         link: '/guide/ml-quickstart',
-        activeMatch: '/(guide/ml-quickstart|transformations/(machine-learning|train-test-split|scale-features|encode-categories|select-features|reduce-dimensions|classifier-model|regressor-model|cross-validate|predict|evaluate|feature-importance))',
+        activeMatch: '/(guide/ml-quickstart|transformations/(machine-learning|train-test-split|scale-features|encode-categories|select-features|reduce-dimensions|classifier-model|regressor-model|cross-validate|predict|evaluate|feature-importance|train-classifier|train-regressor|train-clustering|train-forecaster|train-dim-reduction))',
       },
       {
         text: 'Plugins',
@@ -428,6 +428,11 @@ export default defineConfig({
             { text: 'Classifier Model', link: '/transformations/classifier-model' },
             { text: 'Regressor Model', link: '/transformations/regressor-model' },
             { text: 'Cross-Validate', link: '/transformations/cross-validate' },
+            { text: 'Train Classifier', link: '/transformations/train-classifier' },
+            { text: 'Train Regressor', link: '/transformations/train-regressor' },
+            { text: 'Train Clustering', link: '/transformations/train-clustering' },
+            { text: 'Train Forecaster', link: '/transformations/train-forecaster' },
+            { text: 'Train Dim. Reduction', link: '/transformations/train-dim-reduction' },
             { text: 'Predict', link: '/transformations/predict' },
             { text: 'Evaluate', link: '/transformations/evaluate' },
             { text: 'Feature Importance', link: '/transformations/feature-importance' },
