@@ -56,11 +56,16 @@ if not _range_mask.all():
 ```python
 df_1 = df_1
 _range_violations = df_1.filter(
-    ~pl.col('price').cast(pl.Float64, strict=False).is_between(0, None, closed='both').fill_null(False)
+    ~((pl.col('price').cast(pl.Float64, strict=False).fill_nan(None) >= 0)).fill_null(False)
 ).height
 if _range_violations > 0:
     raise ValueError(f"assertValueRange: {_range_violations} row(s) in 'price' outside range")
 ```
+
+For the one-sided example above, `price=[0, 1, 100]` passes unchanged. Values
+such as `[-1, None, float("nan"), 1]` produce three violations. The same
+configuration is also available in `warn` mode, where the violation is emitted
+as a warning and the dataframe continues unchanged.
 
 In `warn` mode the `raise` is replaced by `warnings.warn(...)` and execution
 continues.
