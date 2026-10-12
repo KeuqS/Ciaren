@@ -1,5 +1,5 @@
 ---
-title: Python SDK
+title: Python SDK for flows, runs and scheduling
 description: "Control Ciaren from Python with the ciaren-client SDK: sync and async clients for flows, runs, datasets, and schedules, log streaming, and Airflow examples."
 search: sdk python client ciaren-client trigger run stream logs async httpx
 ---
