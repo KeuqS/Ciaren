@@ -256,11 +256,9 @@ class PolarsCodeGenerator:
             polars *frame* input to pandas, run the pandas code, then lift frame
             outputs back to polars.
 
-            The ``model`` reference an ML flow passes between nodes (mlTrain ->
-            mlPredict / featureImportance) is a fitted estimator object, **not** a
-            frame — identified by ``sourceHandle == "model"`` on its edge and the
-            ``"model"`` output handle. Those never go through pandas/polars
-            conversion; they stay plain Python variables.
+            A ``model`` output stays a plain Python variable: Train exports emit
+            fitted estimators, while definition nodes emit pandas reference
+            frames for Cross-Validate. Neither undergoes Polars conversion.
             """
             pdf_inputs: dict[str, str] = {}
             converted: dict[str, str] = {}
@@ -271,7 +269,7 @@ class PolarsCodeGenerator:
                 src_v = source_var(e)
                 src_type = nodes_by_id[e["source"]]["type"]
                 if edge_carries_model(src_type, e.get("sourceHandle")):
-                    pdf_inputs[handle] = src_v  # estimator object — pass through
+                    pdf_inputs[handle] = src_v  # model output — pass through
                     continue
                 if src_v not in converted:
                     pdf = next_eager()
@@ -287,7 +285,7 @@ class PolarsCodeGenerator:
             outs: dict[str, str] = {}
             for h in handles:
                 if h in model_handles:
-                    outs[h] = pdf_outs[h]  # estimator object — keep as a plain variable
+                    outs[h] = pdf_outs[h]  # model output — keep as a plain variable
                     continue
                 v = next_var()
                 suffix = ".lazy()" if lazy else ""
