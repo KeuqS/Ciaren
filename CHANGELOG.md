@@ -38,6 +38,9 @@ results that previously differed from a Ciaren run.
 - **Text input exports** preserve UTF-8, blank lines and boundary whitespace.
 - **Icon-only editor controls** have accessible labels (#230).
 - **Documentation checks on Windows** invoke npm tooling correctly (#232).
+- **Python dependency security floors** apply to pip installs as well as the
+  development lockfile, excluding affected multidict, urllib3, Werkzeug and
+  Pillow releases from the existing MLflow dependency stack.
 
 ### Changed
 
@@ -45,7 +48,10 @@ results that previously differed from a Ciaren run.
   module processes, combines coverage and blocks PyPI publication until the
   full OS/Python matrix and both package builds pass.
 - **Frontend tooling** uses Vite 8 with verified vendor chunks; installed
-  packages continue to bundle the editor.
+  packages continue to bundle the editor. Tailwind 4 removes an unpatched
+  dependency chain while retaining the purple theme and keyboard focus styles.
+- **Documentation dependencies** use patched Vite and source-map packages.
+  The docs audit now blocks high-severity advisories, matching the editor.
 - **Documentation navigation and metadata** use specific descriptions,
   current capability notes and examples that distinguish runtime safeguards
   from ordinary exported Python. The roadmap describes alpha limitations.

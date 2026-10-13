@@ -210,7 +210,7 @@ export function NodePalette({ onAdd: onAddProp, unlocked }: NodePaletteProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search nodes…"
-          className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-7 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-7 text-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         />
         {query && (
           <button
@@ -403,7 +403,7 @@ function PaletteItem({
           disabled={disabled}
           className={cn(
             "group flex items-center gap-2.5 rounded-lg border border-transparent bg-card/60 px-2.5 py-2 text-left text-sm font-medium text-slate-700 shadow-sm",
-            "transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "transition-all duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
             disabled
               ? "cursor-not-allowed opacity-50"
               : "cursor-grab hover:-translate-y-px hover:border-brand-200 hover:bg-card hover:shadow active:cursor-grabbing",

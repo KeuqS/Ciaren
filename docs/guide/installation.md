@@ -29,6 +29,9 @@ You can run the backend on its own and drive it through the
 A database is **optional**: SQLite is the zero-setup default. PostgreSQL / MySQL
 are supported via an async driver.
 
+The visual editor needs a modern browser: Chrome 111+, Firefox 128+, or
+Safari 16.4+. Use a current browser for the best experience.
+
 ## Recommended: PyPI Package
 
 Use the PyPI package when you want the simplest local install.

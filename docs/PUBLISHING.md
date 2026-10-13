@@ -205,6 +205,13 @@ validates the exported rendering and links. Here, `npm test` checks Markdown,
 the VitePress build and source links. Run both repositories' checks; a green
 VitePress build alone does not prove that the MDX import is supported.
 
+VitePress 1.6 uses a scoped Vite 6.4 override in `package.json` to avoid the
+unpatched Vite 5 dependency chain. This deliberately exceeds VitePress's
+declared Vite range. When changing it, run `npm ci`, `npm audit --audit-level=high`
+and `npm test`, then check direct and client-side navigation, search, theme
+switching and custom Vue components in a browser. Vite 8 is not a drop-in
+replacement for VitePress 1's generated lean page chunks.
+
 ---
 
 Questions about the pipeline itself belong with the website repo; questions

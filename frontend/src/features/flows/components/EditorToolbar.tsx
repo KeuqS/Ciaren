@@ -184,7 +184,7 @@ export function EditorToolbar({
                 value={engine}
                 onChange={(e) => onEngineChange(e.target.value as "pandas" | "polars")}
                 title="Execution engine"
-                className="h-9 border-r border-input bg-background px-2 text-xs font-medium focus-visible:outline-none"
+                className="h-9 border-r border-input bg-background px-2 text-xs font-medium focus-visible:outline-hidden"
               >
                 <option value="pandas">pandas</option>
                 <option value="polars">polars</option>
