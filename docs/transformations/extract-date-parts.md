@@ -1,7 +1,7 @@
 ---
-title: Extract date parts
+title: Extract Date Parts with pandas and Polars
 search: extract date parts year month day weekday hour datetime components
-description: The Extract date parts node (extractDateParts) adds year, month, day, weekday, or hour columns from a date or datetime column. With pandas code.
+description: Extract year, month, day, weekday and hour columns in Ciaren. Compare runnable pandas and Polars exports, null dates and weekday numbering.
 ---
 
 # Extract date parts — `extractDateParts`
@@ -48,15 +48,72 @@ Each part becomes a new column named `<column>_<part>` (e.g. `ordered_at_year`).
 
 ## Generated Python code
 
+Each complete File Input → Extract Date Parts → File Output flow reads `source.csv` and
+writes `result.parquet`. The first example keeps the original configuration `column:
+ordered_at`, `parts: [year, month]`; the illustration above instead uses `occurred_at`.
+The second example requests all five supported parts. The input dates in these examples
+are ISO text; valid dates and missing values are supported, and every original field and
+row is retained. Put your original CSV beside the script; use an environment with Ciaren
+and its file-format dependencies installed. Polars exports here use eager frames.
+
+### pandas
+
+#### Year month
+
 ```python
-_dt = pd.to_datetime(df_1['ordered_at'])
-df_2 = df_1.assign(ordered_at_year=_dt.dt.year, ordered_at_month=_dt.dt.month)
+import pandas as pd
+
+df_source = pd.read_csv('source.csv')
+_dt = pd.to_datetime(df_source['ordered_at'])
+df_source = df_source.assign(ordered_at_year=_dt.dt.year, ordered_at_month=_dt.dt.month)
+df_source.to_parquet('result.parquet', index=False)
+```
+
+#### All parts
+
+```python
+import pandas as pd
+
+df_source = pd.read_csv('source.csv')
+_dt = pd.to_datetime(df_source['ordered_at'])
+df_source = df_source.assign(ordered_at_year=_dt.dt.year, ordered_at_month=_dt.dt.month, ordered_at_day=_dt.dt.day, ordered_at_weekday=_dt.dt.weekday, ordered_at_hour=_dt.dt.hour)
+df_source.to_parquet('result.parquet', index=False)
+```
+
+### Polars
+
+#### Year month
+
+```python
+import polars as pl
+
+df_source = pl.read_csv('source.csv')
+_sch = df_source.collect_schema()
+_dt = (pl.col('ordered_at').str.to_datetime(strict=False) if _sch['ordered_at'] == pl.Utf8 else pl.col('ordered_at').cast(pl.Datetime, strict=False))
+df_source = df_source.with_columns([_dt.dt.year().alias('ordered_at_year'), _dt.dt.month().alias('ordered_at_month')])
+df_source.write_parquet('result.parquet')
+```
+
+#### All parts
+
+```python
+import polars as pl
+
+df_source = pl.read_csv('source.csv')
+_sch = df_source.collect_schema()
+_dt = (pl.col('ordered_at').str.to_datetime(strict=False) if _sch['ordered_at'] == pl.Utf8 else pl.col('ordered_at').cast(pl.Datetime, strict=False))
+df_source = df_source.with_columns([_dt.dt.year().alias('ordered_at_year'), _dt.dt.month().alias('ordered_at_month'), _dt.dt.day().alias('ordered_at_day'), (_dt.dt.weekday() - 1).alias('ordered_at_weekday'), _dt.dt.hour().alias('ordered_at_hour')])
+df_source.write_parquet('result.parquet')
 ```
 
 ## Tips & common mistakes
 
-- **`weekday` is Monday=0 … Sunday=6** (consistent across pandas and polars
-  exports — verified by the parity tests).
+- **`weekday` is Monday=0 … Sunday=6.** The Polars export subtracts one from
+  Polars' native weekday numbering to match pandas. Missing dates produce
+  missing date parts.
+- **Invalid text differs by engine.** pandas raises when it cannot parse a
+  date; Polars uses non-strict parsing, so an invalid value can become null.
+  Parse explicitly upstream when you need a chosen format or error policy.
 - If the source is text, [Parse dates](./parse-dates.md) or
   [Change types](./cast-types.md) → `datetime` first; this node also parses on the
   fly but an explicit parse is clearer.
